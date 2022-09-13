@@ -1,4 +1,4 @@
-module github.com/blheson/rkfl-sdk-go
+module github.com/rocketfuel
 
 go 1.19
 

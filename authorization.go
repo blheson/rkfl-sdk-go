@@ -1,24 +1,27 @@
 package rocketfuel
 
-import "fmt"
-
-const (
-	baseResource = "/auth"
+import (
+	"fmt"
 )
 
-type AuthorizatonService service
+const (
+	baseAuth = "/auth"
+)
 
-type AuthorizatonRequest struct {
-	email    string `json:"email,omitempty"`
-	password string `json:"password,omitempty"`
+type AuthorizationService service
+
+type AuthorizationRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func (s *AuthorizatonService) login() (Response, error) {
-	u := fmt.Sprintf(baseResource + "/login")
+func (s *AuthorizationService) Login() (Response, error) {
+	u := fmt.Sprintf(baseAuth + "/login")
 	resp := Response{}
 
-	cred := s.getMerchantCred()
-	err := s.client.Call("POST", u, resp, cred)
+	cred := s.client.getMerchantCred()
+
+	err := s.client.Call("POST", u, cred, &resp)
 
 	return resp, err
 }

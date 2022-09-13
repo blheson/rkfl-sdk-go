@@ -1,14 +1,15 @@
 package rocketfuel
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -17,7 +18,7 @@ import (
 const (
 	version            = "0.0.1"
 	defaultHTTPTimeout = 60 * time.Second
-	baseURL            = "https://api.rocketfuelblockchain.com"
+	baseURL            = "https://api.rocketfuelblockchain.com/api"
 	userAgent          = "rocketfuel-go" + version
 )
 
@@ -27,22 +28,23 @@ type service struct {
 type Client struct {
 	common         service
 	client         *http.Client
-	options        Options
+	options        *Options
 	baseURL        *url.URL
 	logger         Logger
-	key            string
+	Key            string
 	Log            Logger
 	LoggingEnabled bool
-	Authorization  AuthorizationService
-	HostedPage     HostedPageService
-	Update         UpdateService
+	Authorization  *AuthorizationService
+	Service        *Service
+	HostedPage     *HostedPageService
+	Update         *UpdateService
 }
 type Options struct {
-	environment string
-	publicKey   string
-	email       string
-	merchantId  string
-	password    string
+	Environment string `json:"environment,omitempty"`
+	PublicKey   string `json:"publicKey,omitempty"`
+	Email       string `json:"email,omitempty"`
+	MerchantId  string `json:"merchantId,omitempty"`
+	Password    string `json:"password,omitempty"`
 }
 
 type Logger interface {
@@ -59,7 +61,7 @@ func (v RequestValues) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(m)
 }
-func getBaseUrl(env string) string {
+func GetBaseUrl(env string) string {
 	prodUrl := "https://app.rocketfuelblockchain.com/api"
 
 	if env == "" {
@@ -81,12 +83,12 @@ func getBaseUrl(env string) string {
 // and HTTP client, allowing overriding of the HTTP client to use.
 // This is useful if you're running in a Google AppEngine environment
 // where the http.DefaultClient is not available.
-func NewClient(options Options, httpClient *http.Client) *Client {
+func NewClient(options *Options, httpClient *http.Client) *Client {
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: defaultHTTPTimeout}
 	}
 
-	u, _ := url.Parse(getBaseUrl(options.environment))
+	u, _ := url.Parse(GetBaseUrl(options.Environment))
 	c := &Client{
 		client:         httpClient,
 		options:        options,
@@ -96,23 +98,29 @@ func NewClient(options Options, httpClient *http.Client) *Client {
 	}
 
 	c.common.client = c
-	c.Authorization = (*AuthorizatonService)(&c.common)
+	c.Authorization = (*AuthorizationService)(&c.common)
 	c.HostedPage = (*HostedPageService)(&c.common)
 	c.Update = (*UpdateService)(&c.common)
 
 	return c
 }
 
-func (c *Client) Call(method, path string, body, v interface{}) error {
-	var buf io.ReadWriter
-	if body != nil {
-		buf = new(bytes.Buffer)
-		err := json.NewEncoder(buf).Encode(body)
-		if err != nil {
-			return err
-		}
+func (c *Client) Call(method, path string, body string, v interface{}) error {
+	var buf *strings.Reader
+	c.Log.Printf("body: %v\n", body)
+
+	if body != "" {
+
+		buf = strings.NewReader(body)
+
 	}
-	u, _ := c.baseURL.Parse(path)
+
+	u, _ := c.baseURL.Parse("api" + path)
+
+	if c.LoggingEnabled {
+		c.Log.Printf("buf: %v\n ", buf)
+	}
+
 	req, err := http.NewRequest(method, u.String(), buf)
 
 	if err != nil {
@@ -122,10 +130,13 @@ func (c *Client) Call(method, path string, body, v interface{}) error {
 		return err
 	}
 
-	if body != nil {
+	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("Authorization", "Bearer "+c.key)
+	if c.Key != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Key)
+	}
+
 	req.Header.Set("User-Agent", userAgent)
 
 	if c.LoggingEnabled {
@@ -147,22 +158,39 @@ func (c *Client) Call(method, path string, body, v interface{}) error {
 	defer resp.Body.Close()
 	return c.decodeResponse(resp, v)
 }
-func (c *Client) getMerchantCred() AuthorizatonRequest {
-	cred := &AuthorizatonRequest{
-		email:    c.options.email,
-		password: c.options.password,
+
+func GetOptions(environment string, publicKey string, email string, merchantId string, password string) *Options {
+
+	options := &Options{
+		Environment: environment,
+		PublicKey:   publicKey,
+		Email:       email,
+		MerchantId:  merchantId,
+		Password:    password,
 	}
-	return cred
+
+	return options
+}
+func (c *Client) getMerchantCred() string {
+
+	mapD := map[string]string{"email": c.options.Email, "password": c.options.Password}
+	mapB, _ := json.Marshal(mapD)
+
+	// cred := &AuthorizationRequest{
+	// 	Email:    c.options.email,
+	// 	Password: c.options.password,
+	// }
+	return string(mapB)
 }
 
-// decodeResponse decodes the JSON response from the Twitter API.
+// decodeResponse decodes the JSON response
 // The actual response will be written to the `v` parameter
 func (c *Client) decodeResponse(httpResp *http.Response, v interface{}) error {
 	var resp Response
 	respBody, err := ioutil.ReadAll(httpResp.Body)
 	json.Unmarshal(respBody, &resp)
 
-	if status, _ := resp["status"].(bool); !status || httpResp.StatusCode >= 400 {
+	if resp["ok"] != true || httpResp.StatusCode != 200 {
 		if c.LoggingEnabled {
 			c.Log.Printf("Rocketfuel error: %+v", err)
 			c.Log.Printf("HTTP Response: %+v", resp)
@@ -173,9 +201,9 @@ func (c *Client) decodeResponse(httpResp *http.Response, v interface{}) error {
 	if c.LoggingEnabled {
 		c.Log.Printf("Rocketfuel response: %v\n", resp)
 	}
+	if data, ok := resp["result"]; ok {
 
-	if data, ok := resp["data"]; ok {
-		switch t := resp["data"].(type) {
+		switch t := resp["result"].(type) {
 		case map[string]interface{}:
 			return mapstruct(data, v)
 		default:
@@ -194,9 +222,26 @@ func mapstruct(data interface{}, v interface{}) error {
 		WeaklyTypedInput: true,
 	}
 	decoder, err := mapstructure.NewDecoder(config)
+
 	if err != nil {
 		return err
 	}
+
 	err = decoder.Decode(data)
+
 	return err
+}
+func (c *Client) GetUUID(body HostedPageRequest) (Response, error) {
+	result, _ := c.Authorization.Login()
+
+	if str, ok := result["access"].(string); ok {
+		c.Key = str
+	} else {
+		fmt.Println("not a strinfg")
+
+	}
+	return c.HostedPage.Create(body)
+}
+func newAPIError(httpResp *http.Response) error {
+	return errors.New("There was an error")
 }
