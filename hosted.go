@@ -28,7 +28,10 @@ type HostedPageRequest struct {
 func (s *HostedPageService) Create(body HostedPageRequest) (Response, error) {
 	u := fmt.Sprintf(baseHost)
 	resp := Response{}
+	body.Merchant_id = s.client.options.MerchantId
 	mapB, _ := json.Marshal(body)
+	fmt.Println("This is the merchant ID", body)
+
 	err := s.client.Call("POST", u, string(mapB), &resp)
 
 	return resp, err

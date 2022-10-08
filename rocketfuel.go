@@ -237,7 +237,7 @@ func (c *Client) GetUUID(body HostedPageRequest) (Response, error) {
 	if str, ok := result["access"].(string); ok {
 		c.Key = str
 	} else {
-		fmt.Println("not a strinfg")
+		fmt.Println("not a string")
 
 	}
 	return c.HostedPage.Create(body)
