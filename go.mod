@@ -1,4 +1,4 @@
-module github.com/rocketfuel
+module bitbucket.org/rocketfuelblockchain/rocketfuel-sdk-go
 
 go 1.19
 
