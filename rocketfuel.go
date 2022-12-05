@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	version            = "0.0.1"
+	version            = "0.0.2"
 	defaultHTTPTimeout = 60 * time.Second
 	baseURL            = "https://api.rocketfuelblockchain.com/api"
 	userAgent          = "rocketfuel-go" + version
@@ -42,9 +42,9 @@ type Client struct {
 type Options struct {
 	Environment string `json:"environment,omitempty"`
 	PublicKey   string `json:"publicKey,omitempty"`
-	Email       string `json:"email,omitempty"`
 	MerchantId  string `json:"merchantId,omitempty"`
-	Password    string `json:"password,omitempty"`
+	ClientId    string `json:"clientId,omitempty"`
+	ClientSecret    string `json:"clientSecret,omitempty"`
 }
 
 type Logger interface {
@@ -159,27 +159,26 @@ func (c *Client) Call(method, path string, body string, v interface{}) error {
 	return c.decodeResponse(resp, v)
 }
 
-func GetOptions(environment string, publicKey string, email string, merchantId string, password string) *Options {
+func GetOptions(environment string, publicKey string, clientId string, merchantId string, clientSecret string) *Options {
 
 	options := &Options{
 		Environment: environment,
 		PublicKey:   publicKey,
-		Email:       email,
+		ClientId:       clientId,
 		MerchantId:  merchantId,
-		Password:    password,
+		ClientSecret:    clientSecret,
 	}
 
 	return options
 }
 func (c *Client) getMerchantCred() string {
 
-	mapD := map[string]string{"email": c.options.Email, "password": c.options.Password}
-	mapB, _ := json.Marshal(mapD)
-
-	// cred := &AuthorizationRequest{
-	// 	Email:    c.options.email,
-	// 	Password: c.options.password,
-	// }
+	toEncrypt := marshalize(map[string]string{
+		"merchantId" :c.options.MerchantId,"totp" : ""})
+ 
+	mapB := marshalize(map[string]string{"clientId" : c.options.ClientId,"encryptedPayload" :  encrypt(string(toEncrypt),
+		c.options.ClientSecret)})
+		
 	return string(mapB)
 }
 
@@ -237,9 +236,10 @@ func (c *Client) GetUUID(body HostedPageRequest) (Response, error) {
 	if str, ok := result["access"].(string); ok {
 		c.Key = str
 	} else {
-		fmt.Println("not a strinfg")
-
+		fmt.Println("not a string",result)
+		panic("Authorization could not be completed")
 	}
+	fmt.Println(body,"body")
 	return c.HostedPage.Create(body)
 }
 func newAPIError(httpResp *http.Response) error {

@@ -1,2 +1,4 @@
+github.com/mervick/aes-everywhere/go/aes256 v0.0.0-20220903070135-f13ed3789ae1 h1:RLYNaO6dcj6hms2FSzwsXlZsyjxQBJi8qO/8Vkilhz0=
+github.com/mervick/aes-everywhere/go/aes256 v0.0.0-20220903070135-f13ed3789ae1/go.mod h1:Eb5RMoo9kOQra/2uRiUTGP+LfNuM13Vqm7y7P34+KKo=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=

@@ -44,3 +44,7 @@ fmt.Println("Result:", result)
 ## TODO
 - [ ] Use option-supplied merchant Id for all requests
 - [ ] Tests
+
+## CHANGELOG
+0.0.1 Initial release
+0.0.2 Allow client Id provision 
