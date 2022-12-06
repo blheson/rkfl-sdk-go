@@ -10,11 +10,11 @@ Where possible, the services available on the client groups the API into logical
 import "https://bitbucket.org/rocketfuelblockchain/rocketfuel-sdk-go"
 
 options := &rocketfuel.Options{
-		Environment: "sandbox",
+		Environment: "sandbox", //prod
 		PublicKey: "MERCHANT_PUBLICKEY",
-		Email:      "MERCHANT_EMAIL",
-		MerchantId: "MERCHANT_ID",
-		Password:   "MERCHANT_PASSWORD",
+        MerchantId: "MERCHANT_ID",
+		ClientId:      "CLIENT_ID",
+		ClientSecret:   "CLIENT_SECRET",
 	}
 
 // second param is an optional http client, allowing overriding of the HTTP client to use.
@@ -40,11 +40,11 @@ result, _ := client.GetUUID(payload)
 
 fmt.Println("Result:", result)
 ```
-
-## TODO
-- [ ] Use option-supplied merchant Id for all requests
-- [ ] Tests
-
+##TEST
+run
+```
+go test
+```
 ## CHANGELOG
 0.0.1 Initial release
-0.0.2 Allow client Id provision 
+0.0.2 Allow client Id provision for authentication

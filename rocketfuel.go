@@ -18,7 +18,8 @@ import (
 const (
 	version            = "0.0.2"
 	defaultHTTPTimeout = 60 * time.Second
-	baseURL            = "https://api.rocketfuelblockchain.com/api"
+	prodURL            = "https://api.rocketfuelblockchain.com/api"
+	sandboxURL         = "https://app-sandbox.rocketfuelblockchain.com/api"
 	userAgent          = "rocketfuel-go" + version
 )
 
@@ -62,21 +63,17 @@ func (v RequestValues) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 func GetBaseUrl(env string) string {
-	prodUrl := "https://app.rocketfuelblockchain.com/api"
 
-	if env == "" {
-		return prodUrl
+	if env != "sandbox" {
+		return prodURL
 	}
 
-	environment_data := map[string]string{
-		"prod":    prodUrl,
-		"dev":     "https://dev-app.rocketdemo.net/api",
-		"qa":      "https://qa-app.rocketdemo.net/api",
-		"preprod": "https://preprod-app.rocketdemo.net/api",
-		"sandbox": "https://app-sandbox.rocketfuelblockchain.com/api",
-	}
+	// environment_data := map[string]string{
+	// 	"prod":    baseURL,
+	// 	"sandbox": "https://app-sandbox.rocketfuelblockchain.com/api",
+	// }
 
-	return environment_data[env]
+	return sandboxURL
 }
 
 // NewClient creates a new Rocketfuel API client with the given API key
