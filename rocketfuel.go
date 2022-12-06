@@ -40,11 +40,11 @@ type Client struct {
 	Update         *UpdateService
 }
 type Options struct {
-	Environment string `json:"environment,omitempty"`
-	PublicKey   string `json:"publicKey,omitempty"`
-	MerchantId  string `json:"merchantId,omitempty"`
-	ClientId    string `json:"clientId,omitempty"`
-	ClientSecret    string `json:"clientSecret,omitempty"`
+	Environment  string `json:"environment,omitempty"`
+	PublicKey    string `json:"publicKey,omitempty"`
+	MerchantId   string `json:"merchantId,omitempty"`
+	ClientId     string `json:"clientId,omitempty"`
+	ClientSecret string `json:"clientSecret,omitempty"`
 }
 
 type Logger interface {
@@ -162,11 +162,11 @@ func (c *Client) Call(method, path string, body string, v interface{}) error {
 func GetOptions(environment string, publicKey string, clientId string, merchantId string, clientSecret string) *Options {
 
 	options := &Options{
-		Environment: environment,
-		PublicKey:   publicKey,
-		ClientId:       clientId,
-		MerchantId:  merchantId,
-		ClientSecret:    clientSecret,
+		Environment:  environment,
+		PublicKey:    publicKey,
+		ClientId:     clientId,
+		MerchantId:   merchantId,
+		ClientSecret: clientSecret,
 	}
 
 	return options
@@ -174,11 +174,11 @@ func GetOptions(environment string, publicKey string, clientId string, merchantI
 func (c *Client) getMerchantCred() string {
 
 	toEncrypt := marshalize(map[string]string{
-		"merchantId" :c.options.MerchantId,"totp" : ""})
- 
-	mapB := marshalize(map[string]string{"clientId" : c.options.ClientId,"encryptedPayload" :  encrypt(string(toEncrypt),
+		"merchantId": c.options.MerchantId, "totp": ""})
+
+	mapB := marshalize(map[string]string{"clientId": c.options.ClientId, "encryptedPayload": encrypt(string(toEncrypt),
 		c.options.ClientSecret)})
-		
+
 	return string(mapB)
 }
 
@@ -232,14 +232,14 @@ func mapstruct(data interface{}, v interface{}) error {
 }
 func (c *Client) GetUUID(body HostedPageRequest) (Response, error) {
 	result, _ := c.Authorization.Login()
-
+	body.Merchant_id = c.options.MerchantId //update body with merchant Id
 	if str, ok := result["access"].(string); ok {
 		c.Key = str
 	} else {
-		fmt.Println("not a string",result)
+		fmt.Println("not a string", result)
 		panic("Authorization could not be completed")
 	}
-	fmt.Println(body,"body")
+	fmt.Println(body, "body")
 	return c.HostedPage.Create(body)
 }
 func newAPIError(httpResp *http.Response) error {

@@ -1,9 +1,10 @@
 package rocketfuel
+
 import (
- 
+	"fmt"
 	"testing"
- 
 )
+
 func TestEncrypt(t *testing.T) {
-	encrypt("encrypt","vve")
+	fmt.Println(encrypt("encrypt", "test"))
 }
