@@ -7,7 +7,7 @@ Where possible, the services available on the client groups the API into logical
 ## Usage
 
 ``` go
-import "https://bitbucket.org/rocketfuelblockchain/rocketfuel-sdk-go"
+import "bitbucket.org/rocketfuelblockchain/rocketfuel-sdk-go"
 
 options := &rocketfuel.Options{
 		Environment: "sandbox", //prod
@@ -48,3 +48,4 @@ go test
 ## CHANGELOG
 0.0.1 Initial release
 0.0.2 Allow client Id provision for authentication
+0.0.3 Change import in read me
